@@ -1,4 +1,7 @@
-locals {
-  project_id = "xxxxxxx"
-  region     = "australia-southeast1"
+variable "project_id" {
+  type = string
+}
+
+variable "region" {
+  type = string
 }

@@ -1,5 +1,5 @@
 resource "google_project_service" "secret_manager_api" {
-  project = local.project_id
+  project = var.project_id
   service = "secretmanager.googleapis.com"
 
   timeouts {

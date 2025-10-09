@@ -18,21 +18,21 @@ resource "random_password" "random_pw1" {
 
 module "secret-manager" {
   source     = "git::https://github.com/GoogleCloudPlatform/cloud-foundation-fabric.git//modules/secret-manager"
-  project_id = local.project_id
+  project_id = var.project_id
 
   secrets = {
     // A secret with no version defined.  This is fine.  You can manually add and modify versions without
     // affecting the terraform state
     example1 = {
       global_replica_locations = {
-        (local.region) = null
+        (var.region) = null
       }
     }
     // A secret with version data defined that WILL be stored in the state file (because
     // data_config.write_only_version is not set)
     example2 = {
       global_replica_locations = {
-        (local.region) = null
+        (var.region) = null
       }
       versions = {
         a = {
@@ -44,7 +44,7 @@ module "secret-manager" {
     // random_password.random_pw1.result IS stored in state!
     example3 = {
       global_replica_locations = {
-        (local.region) = null
+        (var.region) = null
       }
       versions = {
         a = {
@@ -59,10 +59,11 @@ module "secret-manager" {
     // random_password.random_pw1.result IS stored in state!
     example4 = {
       global_replica_locations = {
-        (local.region) = null
+        (var.region) = null
       }
       versions = {
         a = {
+          //data = format("password: %s", random_password.random_pw1.result)
           data = format("password: %s", random_password.random_pw1.result)
           data_config = {
             write_only_version = local.version_number
@@ -75,7 +76,7 @@ module "secret-manager" {
     // random_password.random_pw1.result IS stored in state!
     example5 = {
       global_replica_locations = {
-        (local.region) = null
+        (var.region) = null
       }
       versions = {
         a = {
@@ -93,7 +94,7 @@ module "secret-manager" {
     // in a CI pipeline and never written to a repo.
     example6 = {
       global_replica_locations = {
-        (local.region) = null
+        (var.region) = null
       }
       versions = {
         a = {
