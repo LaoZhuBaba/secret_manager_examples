@@ -1,20 +1,50 @@
+# This resource is stored in state.  There is an ephemeral version of this resource
+# which avoids state but it is incompatible with the Secret Manager fabric module
 resource "random_password" "random_pw1" {
-  length = 32
-  # Avoid special characters because some may be unsupported.
+  length  = 32
   special = false
   keepers = {
-    version_number = local.version_number
+    version_number = timestamp()
   }
 }
 
 locals {
-  connection_string = format(
-    "Server=myServerAddress; Database=myDataBase; User Id=myUsername; Password=%s;",
-    random_password.random_pw1.result
-  )
-  version_number = 1
+  // This is an OS command that generates a 32 character string of alphanumeric
+  // characters.  Should work on both MacOS and Linux.
+  random_password_cmd = "LC_CTYPE=C tr -cd '[:alnum:]' < /dev/urandom | head -c 32"
+  random_pw1_version  = 1 # Change this value to generate a new version of random_pw1
+  example4_version    = 1 # Change this value to generate a new password for example4
+  example5_version    = 1 # Change this value to generate a new password for example5
 }
 
+
+resource "null_resource" "create_example4_secret_file" {
+  provisioner "local-exec" {
+    command = format(
+      "%s > %s",
+      local.random_password_cmd,
+      "example4_secret.txt"
+    )
+
+  }
+  triggers = {
+    go = local.example4_version
+  }
+}
+
+
+resource "null_resource" "create_example5_secret_file" {
+  provisioner "local-exec" {
+    command = format(
+      "echo \"Server=myServerAddress; Database=myDataBase; User Id=myUsername; Password=`%s`\" > %s",
+      local.random_password_cmd,
+      "example5_secret.txt"
+    )
+  }
+  triggers = {
+    go = local.example5_version
+  }
+}
 
 module "secret-manager-blueprint" {
   source = "./module"
@@ -22,25 +52,35 @@ module "secret-manager-blueprint" {
   region     = var.region
   project_id = var.project_id
   secrets = {
-    #     // A secret with no version defined.  This is fine.  You can manually add and modify versions without
-    #     // affecting the terraform state
-    #     example1 = {
-    #       global_replica_locations = {
-    #         (var.region) = null
-    #       }
-    #     }
-    #     // A secret with version data defined that WILL be stored in the state file (because
-    #     // data_config.write_only_version is not set)
-    #     example2 = {
-    #       global_replica_locations = {
-    #         (var.region) = null
-    #       }
-    #       versions = {
-    #         a = {
-    #           data = random_password.random_pw1.result
-    #         }
-    #       }
-    #     }
+    // A secret with no version defined.  This is fine.  You can manually add and modify versions without
+    // affecting the terraform state
+    example1 = {
+      global_replica_locations = {
+        "australia-southeast1" = null
+        "australia-southeast2" = null
+      }
+      labels = {
+        "businessunit"    = "example_value",
+        "subbusinessunit" = "example_value"
+      }
+    }
+    // A secret with version data defined that WILL be stored in the state file (because
+    // data_config.write_only_version is not set)
+    example2 = {
+      global_replica_locations = {
+        "australia-southeast1" = null
+        "australia-southeast2" = null
+      }
+      labels = {
+        "businessunit"    = "example_value",
+        "subbusinessunit" = "example_value"
+      }
+      versions = {
+        a = {
+          data = random_password.random_pw1.result
+        }
+      }
+    }
     // A secret with version data defined that will NOT be stored in the state file.  But 
     // random_password.random_pw1.result IS stored in state!
     example3 = {
@@ -49,73 +89,64 @@ module "secret-manager-blueprint" {
         "australia-southeast2" = null
       }
       labels = {
-        "businessunit"    = "jkjkj",
-        "subbusinessunit" = "jkjkj"
+        "businessunit"    = "example_value",
+        "subbusinessunit" = "example_value"
       }
       versions = {
         a = {
           data = random_password.random_pw1.result
           data_config = {
-            write_only_version = local.version_number
+            write_only_version = local.random_pw1_version
           }
         }
       }
     }
-    #     // A secret based on a random value and a literal string.  Not stored in state.  But 
-    #     // random_password.random_pw1.result IS stored in state!
-    #     example4 = {
-    #       global_replica_locations = {
-    #         (var.region) = null
-    #       }
-    #       versions = {
-    #         a = {
-    #           //data = format("password: %s", random_password.random_pw1.result)
-    #           data = format("password: %s", random_password.random_pw1.result)
-    #           data_config = {
-    #             write_only_version = local.version_number
-    #           }
-    #         }
-    #       }
-    #     }
 
-    #     // A secret based on a variable that is composed of a literal string plus a random value.
-    #     // random_password.random_pw1.result IS stored in state!
-    #     example5 = {
-    #       global_replica_locations = {
-    #         (var.region) = null
-    #       }
-    #       versions = {
-    #         a = {
-    #           data = local.connection_string
-    #           data_config = {
-    #             write_only_version = local.version_number
-    #           }
-    #         }
-    #       }
-    #     }
-
-    #     // A secret version pulled from a file
-    #     // No sensitive data stored in state :-)
-    #     // I'm assuming that in the real world, ./secret.txt would be auto-generated
-    #     // in a CI pipeline and never written to a repo.
-    #     example6 = {
-    #       global_replica_locations = {
-    #         (var.region) = null
-    #       }
-    #       versions = {
-    #         a = {
-    #           data = "./secret.txt"
-    #           data_config = {
-    #             write_only_version = local.version_number
-    #             is_file            = true
-    #           }
-    #         }
-    #       }
-    #     }
-    example7 = {
+    // A secret version pulled from a file so no sensitive data stored in state
+    example4 = {
+      global_replica_locations = {
+        "australia-southeast2" = null
+      }
       labels = {
-        "businessunit"    = "jkjkj",
-        "subbusinessunit" = "jkjkj"
+        "businessunit"    = "example_value",
+        "subbusinessunit" = "example_value"
+      }
+      versions = {
+        a = {
+          data = "./example4_secret.txt"
+          data_config = {
+            write_only_version = local.example4_version
+            is_file            = true
+          }
+        }
+      }
+    }
+
+    // A secret version pulled from a file containing a SQL connection string.
+    // No sensitive data stored in state
+    example5 = {
+      global_replica_locations = {
+        "australia-southeast1" = null
+      }
+      labels = {
+        "businessunit"    = "example_value",
+        "subbusinessunit" = "example_value"
+      }
+      versions = {
+        a = {
+          data = "./example5_secret.txt"
+          data_config = {
+            write_only_version = local.example5_version
+            is_file            = true
+          }
+        }
+      }
+    }
+
+    example_regional = {
+      labels = {
+        "businessunit"    = "example_value",
+        "subbusinessunit" = "example_value",
       }
       location = "australia-southeast1"
       versions = {

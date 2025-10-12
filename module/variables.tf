@@ -61,13 +61,19 @@ variable "secrets" {
   validation {
     condition = alltrue([
       for k, v in var.secrets :
-      v.location != null || (v.global_replica_locations != null && length(v.global_replica_locations) > 0)
+      # The first try() checks if v.location is null or an empty string
+      # The second try() checks if  v.global_replica_locatsions is null or zero length
+      # What we need is for exactly one of these conditions to be true.
+      try(coalesce(v.location), false) != false || try(length(v.global_replica_locations), 0) != 0
     ])
     error_message = "global_replica_locations & location cannot both be empty or null"
   }
   validation {
     condition = alltrue(flatten([
       for k, v in var.secrets : [
+        # It is okay for global_replica_locations to be null, in which case the for
+        # loop terminates immediately.  But if global_replica_locations is not null
+        # then each of its element must match an element in local.australian_regions.
         for grk, grv in v.global_replica_locations == null ? {} : v.global_replica_locations : contains(
           local.australian_regions, grk
         )
@@ -81,7 +87,8 @@ variable "secrets" {
   validation {
     condition = alltrue(flatten([
       for k, v in var.secrets :
-      v.location != null ? contains(local.australian_regions, v.location) : true
+      # This try() returns true if v.location is not null and not empty
+      try(coalesce(v.location), false) != false ? contains(local.australian_regions, v.location) : true
     ]))
     error_message = format(
       "If location is set for a regional secret it must have a value from the list: %v",
