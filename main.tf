@@ -62,6 +62,7 @@ module "secret-manager-blueprint" {
       labels = {
         "businessunit"    = "example_value",
         "subbusinessunit" = "example_value"
+        "environment"     = "npe"
       }
     }
     // A secret with version data defined that WILL be stored in the state file (because
@@ -74,6 +75,7 @@ module "secret-manager-blueprint" {
       labels = {
         "businessunit"    = "example_value",
         "subbusinessunit" = "example_value"
+        "environment"     = "npe"
       }
       versions = {
         a = {
@@ -91,6 +93,7 @@ module "secret-manager-blueprint" {
       labels = {
         "businessunit"    = "example_value",
         "subbusinessunit" = "example_value"
+        "environment"     = "npe"
       }
       versions = {
         a = {
@@ -110,6 +113,7 @@ module "secret-manager-blueprint" {
       labels = {
         "businessunit"    = "example_value",
         "subbusinessunit" = "example_value"
+        "environment"     = "npe"
       }
       versions = {
         a = {
@@ -131,6 +135,7 @@ module "secret-manager-blueprint" {
       labels = {
         "businessunit"    = "example_value",
         "subbusinessunit" = "example_value"
+        "environment"     = "npe"
       }
       versions = {
         a = {
@@ -147,6 +152,7 @@ module "secret-manager-blueprint" {
       labels = {
         "businessunit"    = "example_value",
         "subbusinessunit" = "example_value",
+        "environment"     = "npe"
       }
       location = "australia-southeast1"
       versions = {
