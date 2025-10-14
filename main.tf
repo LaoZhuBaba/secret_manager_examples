@@ -1,3 +1,14 @@
+terraform {
+  required_version = ">= 1.12.2"
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = ">= 7.0.1, < 8.0.0"
+    }
+  }
+}
+
+
 # This resource is stored in state.  There is an ephemeral version of this resource
 # which avoids state but it is incompatible with the Secret Manager fabric module
 resource "random_password" "random_pw1" {

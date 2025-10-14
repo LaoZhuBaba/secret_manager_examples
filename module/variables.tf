@@ -82,6 +82,13 @@ variable "secrets" {
     error_message = "global_replica_locations & location cannot both be empty or null"
   }
   validation {
+    condition = alltrue([
+      # Using "never_match" as a default value ensures that the test fails if the "environment" key is missing
+      for k, v in var.secrets : contains(local.valid_environments, lookup(v.labels, "environment", "never_match"))
+    ])
+    error_message = "ARPC-004"
+  }
+  validation {
     condition = alltrue(flatten([
       for k, v in var.secrets : [
         # It is okay for global_replica_locations to be null, in which case the for
