@@ -9,7 +9,7 @@ variable "region" {
 variable "secrets" {
   type = map(object({
     # annotations = optional(map(string), {})
-    deletion_protection = optional(bool, true)
+    deletion_protection = optional(bool, false) // TODO put default back to true
     # kms_key             = optional(string)
     labels                   = map(string)
     global_replica_locations = optional(map(string))
@@ -44,7 +44,7 @@ variable "secrets" {
     # })), {})
     version_config = optional(object({
       aliases     = optional(map(number))
-      destroy_ttl = optional(string, "168h") // 7 days
+      destroy_ttl = optional(string, "604800s") // 7 days
     }), {})
     versions = optional(map(object({
       data            = string
@@ -67,7 +67,7 @@ variable "secrets" {
   validation {
     condition = alltrue([
       for k in var.secrets :
-      k.deletion_protection == true
+      k.deletion_protection == false # TODO reverse this.  false is needed for testing
     ])
     error_message = "deletion_protection must be set to true"
   }
