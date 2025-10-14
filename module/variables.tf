@@ -68,7 +68,6 @@ variable "secrets" {
     condition = alltrue([
       for k in var.secrets :
       k.deletion_protection == true
-
     ])
     error_message = "deletion_protection must be set to true"
   }
@@ -115,6 +114,11 @@ variable "secrets" {
         for lv in local.required_labels : contains(keys(v.labels), lv)
       ]
     ]))
-    error_message = format("Missing label.  Must include all of: %v", local.required_labels)
+    error_message = format(
+      "%s %s validation: Missing label.  Must include all of: %v",
+      local.message_prefix,
+      local.module_name,
+      local.required_labels
+    )
   }
 }
