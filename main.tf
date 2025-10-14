@@ -64,6 +64,10 @@ module "secret-manager-blueprint" {
         "subbusinessunit" = "example_value"
         "environment"     = "npe"
       }
+      version_config = {
+        destroy_ttl = "170h"
+      }
+      deletion_protection = true
     }
     // A secret with version data defined that WILL be stored in the state file (because
     // data_config.write_only_version is not set)

@@ -6,11 +6,10 @@ variable "region" {
   type = string
 }
 
-
 variable "secrets" {
   type = map(object({
     # annotations = optional(map(string), {})
-    # deletion_protection = optional(bool)
+    deletion_protection = optional(bool, true)
     # kms_key             = optional(string)
     labels                   = map(string)
     global_replica_locations = optional(map(string))
@@ -43,10 +42,10 @@ variable "secrets" {
     #     description = optional(string)
     #   }))
     # })), {})
-    # version_config = optional(object({
-    #   aliases     = optional(map(number))
-    #   destroy_ttl = optional(string)
-    # }), {})
+    version_config = optional(object({
+      aliases     = optional(map(number))
+      destroy_ttl = optional(string, "168h") // 7 days
+    }), {})
     versions = optional(map(object({
       data            = string
       deletion_policy = optional(string)
@@ -58,6 +57,21 @@ variable "secrets" {
       }))
     })), {})
   }))
+  validation {
+    condition = alltrue([
+      for k in var.secrets :
+      timecmp(timeadd(plantimestamp(), k.version_config.destroy_ttl), timeadd(plantimestamp(), "167h59m59s")) == 1
+    ])
+    error_message = "destroy_ttl must be at least 7 days"
+  }
+  validation {
+    condition = alltrue([
+      for k in var.secrets :
+      k.deletion_protection == true
+
+    ])
+    error_message = "deletion_protection must be set to true"
+  }
   validation {
     condition = alltrue([
       for k, v in var.secrets :
